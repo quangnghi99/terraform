@@ -1,3 +1,10 @@
+variable "vpc_cidr" {
+  description = "vpc cidr"
+  type        = string
+  default     = "10.0.0.0/16"
+}
+
+
 variable "public_subnet_cidr_blocks" {
   description = "Available cidr blocks for public subnets"
   type        = list(string)
@@ -27,6 +34,19 @@ variable "private_subnet_cidr_blocks" {
     "10.0.108.0/24",
   ]
 }
+
+variable "public_subnet_count" {
+  description = "Number of public subnet"
+  type        = number
+  default     = 2
+}
+
+variable "private_subnet_count" {
+  description = "Number of private subnet"
+  type        = number
+  default     = 2
+}
+
 variable "enable_blue_env" {
   description = "Enable blue environment"
   type        = bool
@@ -51,7 +71,7 @@ variable "green_instance_count" {
   default     = 2
 }
 
-variable "traffic_distribution" {
-  description = "Levels of traffic distribution"
-  type        = string
-}
+# variable "traffic_distribution" {
+#   description = "Levels of traffic distribution"
+#   type        = string
+# }
