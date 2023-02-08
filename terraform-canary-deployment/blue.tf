@@ -1,4 +1,3 @@
-# EC2 Instance
 resource "aws_instance" "blue" {
   count = var.enable_blue_env ? var.blue_instance_count : 0
 
@@ -6,19 +5,17 @@ resource "aws_instance" "blue" {
   instance_type          = "t2.micro"
   subnet_id              = module.vpc.public_subnets[count.index % length(module.vpc.public_subnets)]
   vpc_security_group_ids = [module.app_security_group.security_group_id]
-
   user_data = templatefile("${path.module}/init-script.sh", {
-    file_content = "blue version 1.0 - ${count.index}"
+    file_content = "version 1.0 - #${count.index}"
   })
 
   tags = {
-    Name = "blue version 1.0 - ${count.index}"
+    Name = "version-1.0-${count.index}"
   }
 }
 
-# Load Balancer Target Group
 resource "aws_lb_target_group" "blue" {
-  name     = "blue-tg-blue-lb"
+  name     = "blue-tg-${random_pet.app.id}-lb"
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
@@ -31,7 +28,6 @@ resource "aws_lb_target_group" "blue" {
   }
 }
 
-# Load Balancer Target Group Attachment
 resource "aws_lb_target_group_attachment" "blue" {
   count            = length(aws_instance.blue)
   target_group_arn = aws_lb_target_group.blue.arn

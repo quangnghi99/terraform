@@ -1,4 +1,3 @@
-# EC2 Instance
 resource "aws_instance" "green" {
   count = var.enable_green_env ? var.green_instance_count : 0
 
@@ -6,19 +5,17 @@ resource "aws_instance" "green" {
   instance_type          = "t2.micro"
   subnet_id              = module.vpc.public_subnets[count.index % length(module.vpc.public_subnets)]
   vpc_security_group_ids = [module.app_security_group.security_group_id]
-
   user_data = templatefile("${path.module}/init-script.sh", {
-    file_content = "green version 1.1 - ${count.index}"
+    file_content = "version 1.1 - #${count.index}"
   })
 
   tags = {
-    Name = "green version 1.1 - ${count.index}"
+    Name = "green-${count.index}"
   }
 }
 
-# Load Balancer Target Group
 resource "aws_lb_target_group" "green" {
-  name     = "green-tg-green-lb"
+  name     = "green-tg-${random_pet.app.id}-lb"
   port     = 80
   protocol = "HTTP"
   vpc_id   = module.vpc.vpc_id
@@ -31,7 +28,6 @@ resource "aws_lb_target_group" "green" {
   }
 }
 
-# Load Balancer Target Group Attachment
 resource "aws_lb_target_group_attachment" "green" {
   count            = length(aws_instance.green)
   target_group_arn = aws_lb_target_group.green.arn

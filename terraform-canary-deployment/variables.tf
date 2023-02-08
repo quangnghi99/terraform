@@ -1,9 +1,26 @@
-variable "vpc_cidr" {
-  description = "vpc cidr"
+variable "vpc_cidr_block" {
+  description = "CIDR block for VPC"
   type        = string
   default     = "10.0.0.0/16"
 }
 
+variable "enable_vpn_gateway" {
+  description = "Enable a VPN gateway in your VPC."
+  type        = bool
+  default     = false
+}
+
+variable "public_subnet_count" {
+  description = "Number of public subnets."
+  type        = number
+  default     = 2
+}
+
+variable "private_subnet_count" {
+  description = "Number of private subnets."
+  type        = number
+  default     = 2
+}
 
 variable "public_subnet_cidr_blocks" {
   description = "Available cidr blocks for public subnets"
@@ -35,18 +52,6 @@ variable "private_subnet_cidr_blocks" {
   ]
 }
 
-variable "public_subnet_count" {
-  description = "Number of public subnet"
-  type        = number
-  default     = 2
-}
-
-variable "private_subnet_count" {
-  description = "Number of private subnet"
-  type        = number
-  default     = 2
-}
-
 variable "enable_blue_env" {
   description = "Enable blue environment"
   type        = bool
@@ -62,7 +67,7 @@ variable "blue_instance_count" {
 variable "enable_green_env" {
   description = "Enable green environment"
   type        = bool
-  default     = false
+  default     = true
 }
 
 variable "green_instance_count" {
@@ -70,6 +75,7 @@ variable "green_instance_count" {
   type        = number
   default     = 2
 }
+
 
 # variable "traffic_distribution" {
 #   description = "Levels of traffic distribution"

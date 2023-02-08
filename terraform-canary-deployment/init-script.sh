@@ -1,12 +1,6 @@
 #!/bin/bash
-
-set -e
-
-sudo -s
-apt-get update
-apt-get install -y nginx
-systemctl enable nginx
-
-echo "${file_content}!" > /var/www/html/index.nginx-debian.html
-
-systemctl restart nginx
+sudo yum update -y
+sudo yum install httpd -y
+sudo systemctl enable httpd
+sudo systemctl start httpd
+echo "${file_content}!" > /var/www/html/index.html

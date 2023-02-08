@@ -27,26 +27,28 @@ locals {
     }
 }
 
-#VPC
 data "aws_availability_zones" "available" {
-    state = "available"
+  state = "available"
 }
 
 module "vpc" {
-    source  = "terraform-aws-modules/vpc/aws"
+  source  = "terraform-aws-modules/vpc/aws"
+  version = "3.19.0"
 
-    name = "${local.name}-vpc"
-    cidr= var.vpc_cidr
-    azs  = data.aws_availability_zones.available.names
-    private_subnets = slice(var.private_subnet_cidr_blocks, 0, var.private_subnet_count)
-    public_subnets  = slice(var.public_subnet_cidr_blocks, 0, var.public_subnet_count)
+  name = "main-vpc"
+  cidr = var.vpc_cidr_block
 
-    enable_nat_gateway = false
-    enable_vpn_gateway = false
+  azs             = data.aws_availability_zones.available.names
+  private_subnets = slice(var.private_subnet_cidr_blocks, 0, var.private_subnet_count)
+  public_subnets  = slice(var.public_subnet_cidr_blocks, 0, var.public_subnet_count)
+
+  enable_nat_gateway = false
+  enable_vpn_gateway = var.enable_vpn_gateway
 }
-# Security Group
+
 module "app_security_group" {
   source  = "terraform-aws-modules/security-group/aws//modules/web"
+  version = "4.17.1"
 
   name        = "web-sg"
   description = "Security group for web-servers with HTTP ports open within VPC"
@@ -58,6 +60,7 @@ module "app_security_group" {
 
 module "lb_security_group" {
   source  = "terraform-aws-modules/security-group/aws//modules/web"
+  version = "4.17.1"
 
   name        = "lb-sg"
   description = "Security group for load balancer with HTTP ports open within VPC"
@@ -66,7 +69,6 @@ module "lb_security_group" {
   ingress_cidr_blocks = ["0.0.0.0/0"]
 }
 
-# AMI
 data "aws_ami" "amazon_linux" {
   most_recent = true
   owners      = ["amazon"]
@@ -77,10 +79,13 @@ data "aws_ami" "amazon_linux" {
   }
 }
 
-# Application Load Balancer
-# At least two subnets in two different Availability Zones must be specified
+resource "random_pet" "app" {
+  length    = 2
+  separator = "-"
+}
+
 resource "aws_lb" "app" {
-  name               = "app-lb"
+  name               = "main-app-${random_pet.app.id}-lb"
   internal           = false
   load_balancer_type = "application"
   subnets            = module.vpc.public_subnets
