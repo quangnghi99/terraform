@@ -45,24 +45,25 @@ module "vpc" {
     enable_vpn_gateway = false
 }
 # Security Group
-resource "aws_security_group" "web" {
+module "app_security_group" {
+  source  = "terraform-aws-modules/security-group/aws//modules/web"
+
   name        = "web-sg"
   description = "Security group for web-servers with HTTP ports open within VPC"
   vpc_id      = module.vpc.vpc_id
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
+  #   ingress_cidr_blocks = module.vpc.public_subnets_cidr_blocks
+  ingress_cidr_blocks = ["0.0.0.0/0"]
+}
 
-  egress {
-    from_port        = 0
-    to_port          = 0
-    protocol         = "-1"
-    cidr_blocks      = ["0.0.0.0/0"]
-  }
+module "lb_security_group" {
+  source  = "terraform-aws-modules/security-group/aws//modules/web"
+
+  name        = "lb-sg"
+  description = "Security group for load balancer with HTTP ports open within VPC"
+  vpc_id      = module.vpc.vpc_id
+
+  ingress_cidr_blocks = ["0.0.0.0/0"]
 }
 
 # AMI
@@ -83,7 +84,7 @@ resource "aws_lb" "app" {
   internal           = false
   load_balancer_type = "application"
   subnets            = module.vpc.public_subnets
-  security_groups    = [aws_security_group.web.id]
+  security_groups    = [module.lb_security_group.security_group_id]
 }
 
 # Load Balancer Listener
