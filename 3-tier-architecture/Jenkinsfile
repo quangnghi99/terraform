@@ -1,0 +1,107 @@
+pipeline {
+  agent any
+
+  tools {
+    terraform 'terraform'
+  }
+
+  environment {
+    AWS_ACCESS_KEY_ID     = credentials('aws_access_key_id')
+    AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
+  }
+    parameters{
+        choice(
+            choices:['apply','destroy'],
+            name:'Actions',
+            description: 'Describes the Actions')
+        booleanParam(
+            defaultValue: false,
+            description: 'vpc',
+            name: 'vpc'
+            )
+        booleanParam(
+            defaultValue: false,
+            description: 'database',
+            name: 'database')
+        booleanParam(
+            defaultValue: false,
+            description: 'autoscaling',
+            name: 'autoscaling')
+        booleanParam(
+            defaultValue: false,
+            description: 's3',
+            name: 's3')
+    }
+
+  stages {
+    // Init
+    stage('Init Provider') {
+      steps {
+        sh 'terraform init'
+      }
+    }
+
+    stage('Plan Resources') {
+      steps {
+        sh 'terraform plan'
+      }
+    }
+
+    // Action
+    stage('Action'){
+        stages{
+          // VPC
+            stage('VPC'){
+                when {
+                    expression{params.vpc == true
+                    }
+                }
+            steps{
+                sh"terraform ${params.Actions} -target=module.vpc -auto-approve"
+            }
+            }
+
+          // Database
+            stage('database'){
+                when {
+                    expression{params.database == true
+                    }
+                }
+            steps{
+                sh"terraform ${params.Actions} -target=module.database -auto-approve"
+            }
+            }
+
+          // Autoscaling
+            stage('autoscaling'){
+                when {
+                    expression{params.autoscaling == true
+                    }
+                }
+            steps{
+                sh"terraform ${params.Actions} -target=module.autoscaling -auto-approve"
+            }
+            }
+
+            // S3
+            stage('s3'){
+                when {
+                    expression{params.s3 == true
+                    }
+                }
+            steps{
+                sh"terraform ${params.Actions} -target=module.s3 -auto-approve"
+            }
+            }
+        }
+    }
+
+    // Complete
+    stage('Terraform Completed'){
+      steps{
+        echo "Terraform Done!"
+      }
+    }
+  }
+}
+

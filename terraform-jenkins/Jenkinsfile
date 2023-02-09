@@ -1,0 +1,61 @@
+pipeline {
+  agent any
+
+  tools {
+    terraform 'terraform'
+  }
+
+  environment {
+    AWS_ACCESS_KEY_ID     = credentials('aws_access_key_id')
+    AWS_SECRET_ACCESS_KEY = credentials('aws_secret_access_key')
+  }
+    parameters{
+      choice(
+        choices:['apply','destroy'],
+        name:'Actions',
+        description: 'Describes the Actions'
+        )
+      booleanParam(
+        defaultValue: false,
+        description: 'plan',
+        name: 'plan'
+        )
+    }
+
+  stages {
+    // Init
+    stage('Init Provider') {
+      steps {
+        sh 'terraform init'
+      }
+    }
+
+    stage('Plan Resources') {
+      when {
+        expression{params.plan == true
+                }
+      }
+      steps {
+        sh 'terraform plan'
+      }
+    }
+
+    // Action
+    stage('Action'){
+      input{
+        message "Are you sure?"
+      }
+      steps{
+        sh "terraform ${params.Actions} -auto-approve"
+      }
+    }
+
+    // Complete
+    stage('Terraform Completed'){
+      steps{
+        echo "Terraform Done!"
+      }
+    }
+  }
+}
+
