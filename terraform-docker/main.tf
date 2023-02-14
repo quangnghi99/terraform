@@ -110,7 +110,7 @@ resource "null_resource" "name" {
     type        = "ssh"
     user        = "ec2-user"
     private_key = tls_private_key.key.private_key_pem
-    host        = self.public_ip
+    host        = aws_instance.ec2_instance.public_ip
   }
 
   # copy the password file for your docker hub account
