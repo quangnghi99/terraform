@@ -1,7 +1,6 @@
 # configured aws provider with proper credentials
 provider "aws" {
   region  = "us-east-1"
-  profile = "nghi"
 }
 
 
@@ -27,6 +26,20 @@ resource "aws_default_subnet" "default_az1" {
   }
 }
 
+resource "tls_private_key" "key" {
+  algorithm = "RSA"
+}
+
+resource "local_sensitive_file" "private_key" {
+  filename        = "${path.module}/docker.pem"
+  content         = tls_private_key.key.private_key_pem
+  file_permission = "0400"
+}
+
+resource "aws_key_pair" "key_pair" {
+  key_name   = "docker"
+  public_key = tls_private_key.key.public_key_openssh
+}
 
 # create security group for the ec2 instance
 resource "aws_security_group" "ec2_security_group" {
@@ -81,7 +94,7 @@ resource "aws_instance" "ec2_instance" {
   instance_type          = "t2.micro"
   subnet_id              = aws_default_subnet.default_az1.id
   vpc_security_group_ids = [aws_security_group.ec2_security_group.id]
-  key_name               = "nghi_key"
+  key_name               = aws_key_pair.key_pair.key_name
 
   tags = {
     Name = "docker server"
@@ -96,8 +109,8 @@ resource "null_resource" "name" {
   connection {
     type        = "ssh"
     user        = "ec2-user"
-    private_key = "nghi_key"
-    host        = aws_instance.ec2_instance.public_ip
+    private_key = tls_private_key.key.private_key_pem
+    host        = self.public_ip
   }
 
   # copy the password file for your docker hub account
